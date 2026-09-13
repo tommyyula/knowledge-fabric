@@ -15,3 +15,6 @@ data
 .gitignore
 *.log
 .DS_Store
+
+# Local-development Postgres only; never part of the production image.
+docker-compose.dev.yml
