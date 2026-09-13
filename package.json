@@ -29,6 +29,8 @@
     "dev:server": "tsx watch --exclude 'data/**' server/index.ts",
     "start:frontend": "node scripts/serve-dist.mjs",
     "start:server": "tsx server/index.ts",
+    "db:up": "docker compose -f docker-compose.dev.yml up -d --wait db",
+    "db:down": "docker compose -f docker-compose.dev.yml down",
     "smoke:ontology": "node scripts/smoke-ontology.mjs",
     "smoke:ontology:claude": "node scripts/smoke-ontology.mjs --claude",
     "smoke:ontology:claude-edit": "node scripts/smoke-ontology.mjs --claude-edit",

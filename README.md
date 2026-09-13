@@ -44,6 +44,79 @@ The backend loads `.env`, `.env.local`, and `.env.private` from the current work
 - `JSON_BODY_LIMIT` defaults to `90mb`.
 - `ONTOLOGY_MAX_UPLOAD_BYTES` controls single multipart upload size before conversion; default `500 MiB`.
 
+#### Local Postgres for development
+
+`docker-compose.dev.yml` starts a throwaway Postgres 16 for development only; it is
+excluded from the production build context and is not referenced by the `Dockerfile`.
+
+```bash
+pnpm db:up      # docker compose -f docker-compose.dev.yml up -d --wait db
+pnpm dev:server
+pnpm db:down    # stop the container, keep the volume
+```
+
+Then enable the matching connection string in one env file (`.env`, `.env.local`, or
+`.env.private`):
+
+```
+DATABASE_URL=postgresql://ontology:ontology@127.0.0.1:55432/ontology
+DATABASE_SSL=disable
+```
+
+- **Start the database before the server.** With `DATABASE_URL` set and the container
+  down, `preflightDatabase()` exhausts every SSL mode and throws, the process exits, and
+  `tsx watch` keeps restarting into the same failure. There is **no** fallback to the JSON
+  store in that case. To run without Postgres, comment the `DATABASE_URL` line out
+  entirely rather than leaving an unreachable value.
+- **Existing JSON data is not migrated.** Snapshots written to
+  `${workspaceRoot}/../ontology-store.json` stay on disk but are not imported (see
+  `docs/adr/0028-persist-operation-run-history-in-postgresql.md`), so the knowledge-base
+  list starts empty after the switch. No import tool exists yet; open an issue if one is
+  needed.
+- **Expect one scary-looking log line.** `DATABASE_SSL` defaults to `auto`, which tries
+  encrypted first and then plaintext:
+
+  ```
+  [db] connect failed host=127.0.0.1 port=55432 db=ontology user=ontology ssl=on (certificate not verified): The server does not support SSL connections
+  [db] connected host=127.0.0.1 port=55432 db=ontology user=ontology ssl=off (plaintext) (DATABASE_SSL=auto)
+  ```
+
+  The first line is the probe, not a misconfiguration. With `DATABASE_SSL=disable` only
+  the `connected ... ssl=off (plaintext)` line remains.
+
+- **Env files are first-one-wins**, both across `.env` → `.env.local` → `.env.private`
+  **and line by line inside a single file**; a defined empty string also counts as set.
+  `DATABASE_URL` and `DATABASE_SSL` must therefore take effect exactly once. If you enable
+  the local example in `.env.example`, comment out the deployment `DATABASE_URL=` /
+  `DATABASE_SSL=` lines above it instead of adding a second pair.
+- **Tests unlocked by `DATABASE_URL`**: 16 cases across two files —
+  `scripts/operation-run-store-postgres.test.mts` (12) and
+  `scripts/operation-run-associated-deletion-postgres.test.mts` (4). The single case in
+  `scripts/technical-issue-reports-postgres.test.mts` is gated on
+  `RUN_SUPPORT_REPORT_POSTGRES_TEST=true`, not on `DATABASE_URL`. These tests delete rows
+  and drop triggers in the configured database (scoped by tenant, but still destructive),
+  so never point `DATABASE_URL` at a shared database with real data. On disk they leave
+  nothing behind: both files create their own workspace roots under the OS temp directory
+  (the associated-deletion file also overrides `APP_DATA_ROOT` with one before importing any
+  server module) and remove them when the test run ends.
+- **Host port** defaults to `55432` to avoid clashing with a Postgres already listening on
+  `5432`. Override it with `DB_HOST_PORT`, which must be set in the project-root `.env` —
+  `docker compose` reads only `.env` for interpolation, never `.env.local` or
+  `.env.private` — and update the port inside `DATABASE_URL` to match.
+- **`--wait` needs Docker Compose v2.17+.** On older versions `pnpm db:up` returns before
+  the container is healthy, which lands you back in the first bullet; confirm readiness
+  with `docker compose -f docker-compose.dev.yml exec db pg_isready -U ontology` before
+  starting the server.
+- **Reset a broken database** with `docker compose -f docker-compose.dev.yml down -v`. That
+  removes the named volume, so the next `pnpm db:up` yields an empty database and
+  `ensureMigrations()` runs from scratch — useful after a half-applied migration.
+- **Scope**: Postgres holds projects, sessions, shares, audit records, external query
+  idempotency, and eligible Operation Runs. Claude session mappings stay in the file store
+  unless `CLAUDE_SESSION_STORE=postgres`, and the Resource Library and workspaces remain on
+  disk either way. The `database` field of `/healthz` is just `Boolean(env.databaseUrl)`
+  and performs no liveness probe — its value comes from the fact that a failed preflight
+  stops the process outright.
+
 ### Auth, IAM, and frontend
 
 - `ONTOLOGY_IAM_ENABLED=true` enables strict IAM headers and SSO-backed user resolution. Development mode falls back to `dev-user` / `dev-tenant`.
