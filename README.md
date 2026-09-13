@@ -89,8 +89,10 @@ DATABASE_SSL=disable
   `DATABASE_URL` and `DATABASE_SSL` must therefore take effect exactly once. If you enable
   the local example in `.env.example`, comment out the deployment `DATABASE_URL=` /
   `DATABASE_SSL=` lines above it instead of adding a second pair.
-- **Tests unlocked by `DATABASE_URL`**: 16 cases across two files —
-  `scripts/operation-run-store-postgres.test.mts` (12) and
+- **Tests unlocked by `DATABASE_URL`**: 15 cases across two files —
+  `scripts/operation-run-store-postgres.test.mts` (11 of its 12; the twelfth, "a configured
+  PostgreSQL failure never falls back to workspace JSON", carries no skip and runs either
+  way because it injects its own unreachable `DATABASE_URL` into a subprocess) and
   `scripts/operation-run-associated-deletion-postgres.test.mts` (4). The single case in
   `scripts/technical-issue-reports-postgres.test.mts` is gated on
   `RUN_SUPPORT_REPORT_POSTGRES_TEST=true`, not on `DATABASE_URL`. These tests delete rows
