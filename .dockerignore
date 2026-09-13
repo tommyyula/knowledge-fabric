@@ -1,0 +1,17 @@
+# Secrets must never enter an image layer -- `COPY . .` would otherwise bake
+# .env.private (the file .env.example tells you to create) into the build.
+.env
+.env.*
+!.env.example
+
+# Host-built dependencies: the image runs linux/glibc, the host may not.
+node_modules
+dist
+
+# Runtime state, including per-user plaintext Bitbucket credentials (ADR 0001).
+data
+
+.git
+.gitignore
+*.log
+.DS_Store
