@@ -1,0 +1,7 @@
+# 由 sync-claude.sh 生成 —— 请勿手工编辑这里列出的文件，改动会在下次同步时被覆盖。
+# 源：https://github.com/czwan/czClaudeWorkflow.git @ cbb55e0828d3a0300c047abb98c1fbf4505f5f5c
+workflows/dev-bot.js
+workflows/dev-pipeline.js
+workflows/dev-plan.js
+workflows/dev-release.js
+workflows/plan-to-issues.js
