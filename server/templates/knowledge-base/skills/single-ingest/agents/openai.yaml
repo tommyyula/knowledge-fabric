@@ -1,0 +1,4 @@
+interface:
+  display_name: "Single Ingest"
+  short_description: "Ingest a single file or small directory (≤8 files) into knowledge."
+  default_prompt: "Use $single-ingest for ingesting individual files or small directories into knowledge."

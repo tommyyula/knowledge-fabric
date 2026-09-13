@@ -1,0 +1,4 @@
+interface:
+  display_name: "Operate"
+  short_description: "Execute grounded business operations."
+  default_prompt: "Use $operate to execute a business task from knowledge evidence, ontology bindings, and available execution tools."

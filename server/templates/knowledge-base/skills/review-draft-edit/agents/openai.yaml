@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Draft Edit"
+  short_description: "Revise the active pending Review draft in place without creating a new draft."
+  default_prompt: "Use $review-draft-edit when the user asks to revise content already shown in the Review panel or already staged in the active pending draft."

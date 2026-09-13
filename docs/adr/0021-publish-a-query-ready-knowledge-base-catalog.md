@@ -1,0 +1,3 @@
+# Publish a query-ready knowledge-base catalog
+
+External callers discover targets through a paginated, searchable catalog of only the Query-ready Knowledge Bases they own. REST exposes the catalog under `/api/v1/knowledge-bases`, and MCP exposes equivalent discovery through `knowledge_base_search`; every returned item is immediately eligible for `knowledge_base_query`. A catalog item contains only its ID, name, description, update time, and `queryReady: true`; workspace, source, session, review, and internal project details remain private. Results sort by update time descending and knowledge-base ID descending, using an opaque cursor with a default page size of 20 and maximum of 100.

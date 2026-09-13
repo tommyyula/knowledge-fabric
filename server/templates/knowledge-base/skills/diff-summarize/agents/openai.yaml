@@ -1,0 +1,4 @@
+interface:
+  display_name: "Diff Summarize"
+  short_description: "Preprocess raw git diffs into structured business change summaries."
+  default_prompt: "Use $diff-summarize to filter noise from diffs and extract business-relevant changes."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Knowledge Challenge"
+  short_description: "Proactive knowledge claim validation through targeted confirmatory questions."
+  default_prompt: "Use $knowledge-challenge to validate knowledge claims through targeted questions. Prioritizes weak spots from ingest quality findings and single-source pages."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify"
+  short_description: "Verify knowledge completeness by generating QA from raw sources and testing against knowledge content."
+  default_prompt: "Use $verify after ingest to validate knowledge coverage against source materials."

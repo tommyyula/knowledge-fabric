@@ -1,0 +1,5 @@
+# Authorize Knowledge Bases through scoped role grants
+
+Knowledge Base access is resolved from immutable ownership plus Viewer, Editor, and Manager grants to either one `(user, tenant membership)` or every member of the owning tenant. The highest active grant is the Effective Share Role, and one capability resolver must govern the workbench and the existing REST, MCP, and A2A discovery and query surfaces. This supersedes ADR-0013's owner-only authorization because duplicating protocol-specific checks would drift and because a shared caller must retain its actor identity while the system uses the Knowledge Base Owner identity to locate the workspace.
+
+Conversation ownership remains private to the actor, Tenant Grants never confer Manager, Member Grants may cross tenants, and source material remains uploader-owned while active Knowledge Base associations prevent deletion. External protocols gain access to their existing discovery and query operations but do not gain new mutation operations.

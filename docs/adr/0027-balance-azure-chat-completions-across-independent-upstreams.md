@@ -1,0 +1,19 @@
+# Balance Azure chat completions across independent upstreams
+
+Knowledge Fabric will route Agent text completions active-active across independently limited, model-compatible Azure OpenAI upstreams instead of binding all traffic to one URL and key. A deep Azure chat-completion pool module will own startup configuration, weighted request selection, in-flight accounting, timeouts, safe retries, and passive circuit-breaker state; the Anthropic proxy remains responsible for protocol translation, while direct non-streaming completions use the same pool. OpenAI-provider and vision-extraction traffic remain outside this pool.
+
+The pool is configured through `AZURE_OPENAI_UPSTREAMS`, whose entries contain an opaque ID, URL, key, and positive weight. Explicit pool configuration is validated strictly at startup; when it is absent, the existing Azure URL/key variables form a backward-compatible single-node pool, and a completely unconfigured Azure provider does not prevent the application from starting. Configuration is immutable until restart. Selection compares in-flight requests normalized by weight and uses smooth weighted round-robin to break ties, with no user or conversation affinity. Pool health and load state are process-local.
+
+A request tries at most two distinct upstreams by default and switches immediately rather than waiting through a cooldown. Network failures and HTTP 408, 409, 429, and 5xx responses are retryable; target-specific 401, 403, and 404 responses are also retryable and trigger a longer cooldown, while request errors such as 400, 413, and 422 are not. Azure `retry-after-ms` takes precedence over standard `Retry-After`, followed by bounded exponential backoff with jitter. Recovery is passive: after cooldown, one real request probes a half-open upstream, and all-cooling pools fail fast rather than issuing synthetic health calls.
+
+Transparent failover is allowed only before the first translatable text delta or tool-call start. Role-only, usage-only, and empty-choice SSE events remain buffered; an embedded error or premature empty stream may fail over, while content-filter or length termination without content does not. Once any user-visible SSE content is committed, an interruption produces an Anthropic stream error and never replays the request against another upstream. Connections, first content, and stream idleness have configurable timeouts; client cancellation aborts the active upstream. Non-streaming responses may fail over on malformed protocol data but not on a valid empty completion, and their caller-provided total timeout is not multiplied by retry attempts.
+
+Exhausted failures are mapped to safe proxy errors without exposing upstream IDs, URLs, keys, or raw Azure bodies. Operational logs record request correlation, attempt, status, latency, failover reason, and circuit state changes without prompts or completions. The pool deliberately provides no local concurrency cap, queue, TPM/RPM token bucket, distributed circuit state, background probe, or runtime secret reload; aggregate demand can still exceed the combined Azure quota.
+
+## Considered Options
+
+- Active-passive routing was rejected because it improves availability but does not continuously share concurrent demand.
+- Mid-stream failover was rejected because replay can produce divergent text, malformed tool input, or duplicate tool execution.
+- A provider-generic pool was rejected because only Azure currently has multiple real upstream targets; OpenAI remains on its existing single-upstream path.
+- Shared circuit and load state was deferred because a remote store would add hot-path latency and operational coupling; multiple application replicas may each observe one failure before converging on the same degraded view.
+- Proxy-side queuing and proactive quota enforcement were rejected for this slice; upstream feedback drives cooling, and callers receive 429 when combined capacity is exhausted.

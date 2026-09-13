@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edit Ontology"
+  short_description: "Update existing ontology artifacts, or hand off to distill when none exist."
+  default_prompt: "Use $edit-ontology only when updated knowledge must change existing files under ontology/; if no usable ontology baseline exists, immediately use $ontology-distill."

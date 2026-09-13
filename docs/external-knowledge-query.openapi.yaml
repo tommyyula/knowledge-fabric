@@ -1,0 +1,194 @@
+openapi: 3.1.0
+info:
+  title: Knowledge Fabric External Knowledge Query API
+  version: 1.0.0
+  description: |
+    A gateway-protected API for discovering and querying one Query-ready Knowledge Base.
+    The deployment gateway validates the Bearer token. This service derives the caller scope
+    from `data.tenant_id` and `data.user_id`; clients must not send a tenant or user selector.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+paths:
+  /knowledge-bases:
+    get:
+      operationId: searchKnowledgeBases
+      summary: List owned Query-ready Knowledge Bases
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string, maxLength: 200 }
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Query-ready catalog page
+          headers:
+            X-Request-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KnowledgeBaseCatalogResponse' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+  /knowledge-bases/{knowledgeBaseId}/queries:
+    post:
+      operationId: queryKnowledgeBase
+      summary: Query one owned Query-ready Knowledge Base
+      parameters:
+        - $ref: '#/components/parameters/KnowledgeBaseId'
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 512 }
+          description: Replays the original query for 24 hours within this caller and knowledge-base scope.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/KnowledgeBaseQueryRequest' }
+      responses:
+        '200':
+          description: Completed answer, including after an idempotent replay.
+          headers:
+            X-Request-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KnowledgeBaseQueryResponse' }
+            text/event-stream:
+              schema:
+                type: string
+                description: SSE stream when `stream` is true. It begins with a `conversation` event and emits the existing resumable run events.
+        '202':
+          description: The same idempotent query is still running. Retry the request with the same Idempotency-Key and identical request body.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QueryInProgressResponse' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '502': { $ref: '#/components/responses/QueryExecutionFailed' }
+  /knowledge-bases/{knowledgeBaseId}/conversations/{conversationId}/stream:
+    get:
+      operationId: recoverKnowledgeBaseQueryStream
+      summary: Reconnect to an active query stream
+      parameters:
+        - $ref: '#/components/parameters/KnowledgeBaseId'
+        - in: path
+          name: conversationId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: runId
+          schema: { type: string }
+        - in: query
+          name: after
+          schema: { type: integer, minimum: 0 }
+          description: Last received run-event sequence; events after it are replayed.
+      responses:
+        '200':
+          description: Active SSE stream
+          content:
+            text/event-stream: { schema: { type: string } }
+        '204': { description: No active run is available to recover. }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/QueryExecutionFailed' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    KnowledgeBaseId:
+      in: path
+      name: knowledgeBaseId
+      required: true
+      schema: { type: string }
+  responses:
+    InvalidRequest:
+      description: Invalid request or required idempotency key missing
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+    NotFound:
+      description: Missing, out-of-scope knowledge base, or missing conversation
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+    Conflict:
+      description: Non-ready knowledge base or idempotency-key reuse with a different request
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+    QueryExecutionFailed:
+      description: The knowledge query could not complete
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } }
+  schemas:
+    KnowledgeBaseCatalogResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [items, nextCursor]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/KnowledgeBaseCatalogItem' }
+            nextCursor: { type: [string, 'null'] }
+    KnowledgeBaseCatalogItem:
+      type: object
+      required: [knowledgeBaseId, name, description, updatedAt, queryReady]
+      properties:
+        knowledgeBaseId: { type: string }
+        name: { type: string }
+        description: { type: string }
+        updatedAt: { type: string, format: date-time }
+        queryReady: { const: true }
+    KnowledgeBaseQueryRequest:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 1, maxLength: 20000 }
+        conversationId: { type: string }
+        stream: { type: boolean, default: false }
+      additionalProperties: false
+    KnowledgeBaseQueryResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [conversationId, answer]
+          properties:
+            conversationId: { type: string }
+            answer: { type: string }
+    QueryInProgressResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [status, conversationId, runId, requestId, retryAfterMs, streamUrl]
+          properties:
+            status: { const: in_progress }
+            conversationId: { type: string }
+            runId: { type: [string, 'null'] }
+            requestId: { type: string }
+            retryAfterMs: { type: integer, minimum: 0 }
+            streamUrl: { type: string }
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        code:
+          type: string
+          enum:
+            - invalid_request
+            - idempotency_key_required
+            - knowledge_base_not_found
+            - knowledge_base_not_query_ready
+            - conversation_not_found
+            - idempotency_key_reused
+            - query_execution_failed

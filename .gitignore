@@ -1,0 +1,35 @@
+# --- Secrets / credentials (never commit) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+**/credentials
+**/credentials.json
+*.secret
+secrets/
+
+# Runtime data root — holds per-user plaintext Bitbucket credentials (see docs/adr/0001)
+data/
+
+# --- Dependencies / build output ---
+node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# --- Logs / caches ---
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.eslintcache
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

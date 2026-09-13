@@ -1,0 +1,3 @@
+# Project query readiness for external discovery
+
+Knowledge Fabric keeps a searchable projection of each knowledge base's flow, phase, query-ready flag, and projection time so the external catalog can paginate and search without scanning every workspace. Known journey-state writes update the projection synchronously on a best-effort basis, without rolling back the authoritative workspace state if that projection update fails. A manually run full rebuild command repairs projection failures; no scheduled reconciler is introduced. Each query rechecks workspace state before execution and rejects a stale catalog result that is no longer Query-ready.

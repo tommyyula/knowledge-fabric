@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coding Repo Ingest"
+  short_description: "Ingest code repositories by mapping live repo surfaces before writing knowledge."
+  default_prompt: "Use $coding-repo-ingest only for backend-validated code repositories under raw/repos/<id>."

@@ -1,0 +1,3 @@
+# Publish an external query operation
+
+The public query operation is `POST /api/v1/knowledge-bases/{knowledgeBaseId}/queries`, accepting a message, optional conversation ID, and response-mode choice. The MCP `knowledge_base_query` tool has the same semantics. Internal ontology, session, message, and agent-run routes remain private implementation details; the first query creates the conversation and every result returns its identifier. A separate read-only catalog may discover Query-ready knowledge bases, but it does not expose knowledge-base management. The MCP surface is limited to `knowledge_base_search` and `knowledge_base_query`.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Query Deepen"
+  short_description: "Canonical knowledge query workflow with targeted deepening and layered answers."
+  default_prompt: "Use $query-deepen for all knowledge query requests in this repo. Broad explainer questions should default to detailed, structured answers."

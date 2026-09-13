@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sync Repos"
+  short_description: "Pull latest code from tracked repos, capture diffs, and queue for review."
+  default_prompt: "Use $sync-repos to synchronize git repositories from .env config and generate diff summaries."

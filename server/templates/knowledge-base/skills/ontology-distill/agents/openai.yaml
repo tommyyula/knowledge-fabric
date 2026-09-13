@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ontology Distill"
+  short_description: "Distill an evidence-backed operational ontology from knowledge."
+  default_prompt: "Use $ontology-distill to build or refresh an operational ontology slice from knowledge sources."

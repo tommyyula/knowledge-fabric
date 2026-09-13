@@ -1,0 +1,4 @@
+interface:
+  display_name: "Query Ontology"
+  short_description: "Answer questions from ontology artifacts only."
+  default_prompt: "Use $query-ontology only when the question should be answered from files under ontology/."

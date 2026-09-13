@@ -1,0 +1,5 @@
+# Make external queries idempotent
+
+Every public REST query carries an `Idempotency-Key`, and the MCP query operation carries an equivalent caller-supplied request ID. Within one authenticated principal and knowledge-base scope, a repeated key represents the original External Query rather than a new prompt, conversation, or agent run; JSON-RPC transport IDs are not business idempotency keys. The key is bound to a request fingerprint containing the knowledge base, conversation, message, and response mode: a different fingerprint within the 24-hour window returns `409 idempotency_key_reused`. While the original run is active, an identical repeat returns `202 query_in_progress` with the conversation, run, status, and stream locations; after completion it returns the first result. Idempotency records are retained for 24 hours from first receipt, after which the key may denote a new query.
+
+An MCP `in_progress` result includes exact retry arguments in both its text and structured output. MCP clients must reuse those arguments verbatim, especially the request ID; a request ID must never be substituted for a conversation ID.

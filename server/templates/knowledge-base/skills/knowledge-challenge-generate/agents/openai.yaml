@@ -1,0 +1,4 @@
+interface:
+  display_name: "Knowledge Challenge Generate"
+  short_description: "Generate challenge questions for knowledge validation from three dimensions."
+  default_prompt: "Use $knowledge-challenge-generate to scan knowledge content and generate validation questions into the challenge queue."

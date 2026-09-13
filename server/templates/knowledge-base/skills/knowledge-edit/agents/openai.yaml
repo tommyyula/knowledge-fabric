@@ -1,0 +1,4 @@
+interface:
+  display_name: "Knowledge Edit"
+  short_description: "Handle explicit user-requested knowledge changes, including additions, edits, deletions, corrections, and renames."
+  default_prompt: "Use $knowledge-edit when the user asks to add, edit, delete, correct, rename, or update knowledge content."

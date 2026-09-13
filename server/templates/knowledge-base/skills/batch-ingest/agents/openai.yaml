@@ -1,0 +1,4 @@
+interface:
+  display_name: "Batch Ingest"
+  short_description: "Three-phase workflow for ingesting large directories (>8 files) into knowledge."
+  default_prompt: "Use $batch-ingest for ingesting large directories with planning, batched execution, and reconciliation."
